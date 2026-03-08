@@ -1,6 +1,22 @@
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,node,remix,react
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,node,remix,react
 
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Database
+*.db
+*.db-journal
+dev.db*
+prisma/dev.db*
+
+# Docker
+docker-compose.override.yml
+
 ### Node ###
 # Logs
 logs

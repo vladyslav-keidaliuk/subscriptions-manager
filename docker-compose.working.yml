@@ -1,0 +1,46 @@
+# Ultimate working setup
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: subscriptions
+      POSTGRES_USER: subscriptions_user
+      POSTGRES_PASSWORD: subscriptions_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U subscriptions_user -d subscriptions"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.working
+    network_mode: "host"
+    environment:
+      - DATABASE_URL=postgresql://subscriptions_user:subscriptions_pass@localhost:5432/subscriptions
+      - SESSION_SECRET=working-secret
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+      - PORT=3000
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "
+        echo '🔧 Setting up database...' &&
+        npx prisma db push --skip-generate &&
+        echo '🌱 Seeding database...' &&
+        node prisma/seed.cjs &&
+        echo '🚀 Starting application with Remix serve...' &&
+        npx remix-serve build/index.js --host 0.0.0.0 --port 3000
+      "
+
+volumes:
+  postgres_data:

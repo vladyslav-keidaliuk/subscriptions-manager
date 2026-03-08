@@ -1,0 +1,29 @@
+# Ultra simple setup - no seeding during build
+FROM node:18-alpine
+
+# Install OpenSSL
+RUN apk add --no-cache openssl
+
+WORKDIR /app
+
+# Copy and install
+COPY package*.json ./
+RUN npm install
+
+# Copy app
+COPY . .
+
+# Create data dir
+RUN mkdir -p /app/data
+
+# Generate Prisma client  
+RUN npx prisma generate
+
+# Build app
+RUN npm run build
+
+EXPOSE 3000
+ENV NODE_ENV=production
+
+# Simple start without seeding
+CMD ["npm", "start"]

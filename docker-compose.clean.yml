@@ -1,0 +1,47 @@
+# Clean Docker setup - handles database setup at runtime
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: subscriptions_clean
+      POSTGRES_USER: subscriptions_user
+      POSTGRES_PASSWORD: clean_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U subscriptions_user -d subscriptions_clean"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.clean
+      no_cache: true
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://subscriptions_user:clean_password@postgres:5432/subscriptions_clean
+      - SESSION_SECRET=clean-dev-secret
+      - NODE_ENV=production
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Set up database and seed at container startup
+    entrypoint: >
+      sh -c "
+        echo '🔧 Setting up database...' &&
+        npx prisma db push --skip-generate &&
+        echo '🌱 Seeding database...' &&
+        node prisma/seed.cjs &&
+        echo '🚀 Starting application...' &&
+        node build/index.js
+      "
+
+volumes:
+  postgres_data:

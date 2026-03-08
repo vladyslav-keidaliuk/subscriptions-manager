@@ -1,0 +1,33 @@
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+.git
+.gitignore
+README.md
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.vscode
+.DS_Store
+build/
+
+# Development files
+*.dev.db*
+dev.db*
+*.log
+
+# Docker files for production build
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Development and test files
+coverage/
+.nyc_output/
+*.tgz
+*.tar.gz

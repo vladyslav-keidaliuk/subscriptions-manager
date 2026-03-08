@@ -1,0 +1,44 @@
+# Simple Docker setup for subscription manager
+# This avoids file permission issues with volume mounts
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: subscriptions_simple
+      POSTGRES_USER: subscriptions_user
+      POSTGRES_PASSWORD: simple_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U subscriptions_user -d subscriptions_simple"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.noseed
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://subscriptions_user:simple_password@postgres:5432/subscriptions_simple
+      - SESSION_SECRET=simple-dev-secret
+      - NODE_ENV=production
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "
+        npx prisma db push &&
+        node prisma/seed.cjs &&
+        npm start
+      "
+
+volumes:
+  postgres_data:
